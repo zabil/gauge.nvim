@@ -20,7 +20,11 @@ end
 
 function M.attach(bufnr, opts)
   if vim.fn.executable('gauge') == 0 then
-    vim.notify('[gauge.nvim] gauge not found in PATH. LSP will not start.', vim.log.levels.ERROR)
+    vim.notify(
+      '[gauge.nvim] The "gauge" binary was not found in your PATH.\n'
+        .. 'Install Gauge from https://gauge.org/get-started/ and ensure it is on your PATH.',
+      vim.log.levels.ERROR
+    )
     return
   end
 
@@ -31,7 +35,9 @@ function M.attach(bufnr, opts)
     if not warned[dir] then
       warned[dir] = true
       vim.notify(
-        '[gauge.nvim] No manifest.json found — not a Gauge project. LSP will not start.',
+        '[gauge.nvim] No manifest.json found in or above "' .. dir .. '".\n'
+          .. 'The LSP server only starts inside a Gauge project.\n'
+          .. 'Run "gauge init <language>" to create one.',
         vim.log.levels.WARN
       )
     end
