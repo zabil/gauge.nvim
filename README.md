@@ -92,11 +92,6 @@ require('gauge').setup({
 |---------|-------------|
 | `:GaugeRun` | Run the current `.spec` file, or the nearest `## Scenario` under the cursor |
 | `:GaugeSpecs` | List all spec files in the project (opens quickfix) |
-| `:GaugeSymbols` | Search specs and scenarios by name across the whole project |
-
-> **Note:** `:GaugeSymbols` prompts for a query. The Gauge LSP server requires
-> at least 2 characters — shorter queries silently return nothing, which is why
-> plain `vim.lsp.buf.workspace_symbol()` appears to produce no results.
 
 Output from `:GaugeRun` appears in a reusable horizontal split terminal.
 The previous run's buffer (and its process) is cleaned up automatically.
