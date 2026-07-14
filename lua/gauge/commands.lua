@@ -125,6 +125,25 @@ function M.specs()
   end, bufnr)
 end
 
+function M.workspace_symbols()
+  -- The Gauge LSP server silently returns nothing for queries shorter than 2
+  -- characters (server-side guard in symbols.go). vim.lsp.buf.workspace_symbol()
+  -- sends an empty string by default, which always gets nil back. We prompt
+  -- first and enforce the minimum length before sending.
+  vim.ui.input({ prompt = 'Gauge workspace symbol (min 2 chars): ' }, function(query)
+    if not query then return end  -- user cancelled
+    if #query < 2 then
+      vim.notify(
+        '[gauge.nvim] Workspace symbol query must be at least 2 characters.\n'
+          .. 'The Gauge LSP server requires a minimum 2-character query.',
+        vim.log.levels.WARN
+      )
+      return
+    end
+    vim.lsp.buf.workspace_symbol(query)
+  end)
+end
+
 function M.setup()
   vim.api.nvim_create_user_command('GaugeRun', function()
     M.run()
@@ -133,6 +152,10 @@ function M.setup()
   vim.api.nvim_create_user_command('GaugeSpecs', function()
     M.specs()
   end, { desc = 'List all Gauge spec files in the quickfix list', force = true })
+
+  vim.api.nvim_create_user_command('GaugeSymbols', function()
+    M.workspace_symbols()
+  end, { desc = 'Search Gauge workspace symbols (specs + scenarios)', force = true })
 end
 
 return M
