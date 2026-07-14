@@ -3,6 +3,7 @@ local M = {}
 
 -- Track the terminal split so we can reuse it across runs.
 local run_win = nil
+local run_buf = nil
 
 local function gauge_client(bufnr)
   local clients = vim.lsp.get_clients({ name = 'gauge', bufnr = bufnr })
@@ -23,14 +24,15 @@ local function nearest_scenario_line(bufnr)
 end
 
 local function open_run_split(shell_cmd)
-  -- If the previous run window is still open, close its buffer first so the
-  -- terminal doesn't accumulate stale output.
-  if run_win and vim.api.nvim_win_is_valid(run_win) then
-    vim.api.nvim_win_close(run_win, true)
+  -- Delete previous terminal buffer (also kills the attached job).
+  if run_buf and vim.api.nvim_buf_is_valid(run_buf) then
+    vim.api.nvim_buf_delete(run_buf, { force = true })
   end
+  run_win = nil
+  run_buf = nil
 
   local prev_win = vim.api.nvim_get_current_win()
-  vim.cmd('botright split')
+  vim.cmd('botright new')
   run_win = vim.api.nvim_get_current_win()
 
   vim.fn.termopen(shell_cmd, {
@@ -42,9 +44,8 @@ local function open_run_split(shell_cmd)
     end,
   })
 
-  -- Give the terminal buffer a stable name.
-  pcall(vim.api.nvim_buf_set_name, vim.api.nvim_get_current_buf(), 'Gauge Run')
-  -- Return focus to the spec buffer.
+  run_buf = vim.api.nvim_get_current_buf()
+  pcall(vim.api.nvim_buf_set_name, run_buf, 'Gauge Run')
   vim.api.nvim_set_current_win(prev_win)
 end
 
@@ -62,11 +63,11 @@ function M.run()
   end
 
   local scenario_line = nearest_scenario_line(bufnr)
-  local target = scenario_line
-    and (filepath .. ':' .. tostring(scenario_line))
-    or filepath
-
-  open_run_split('gauge run ' .. vim.fn.shellescape(target))
+  local cmd = 'gauge run ' .. vim.fn.shellescape(filepath)
+  if scenario_line then
+    cmd = cmd .. ':' .. tostring(scenario_line)
+  end
+  open_run_split(cmd)
 end
 
 function M.specs()
@@ -107,11 +108,11 @@ end
 function M.setup()
   vim.api.nvim_create_user_command('GaugeRun', function()
     M.run()
-  end, { desc = 'Run current Gauge spec or scenario in a split terminal' })
+  end, { desc = 'Run current Gauge spec or scenario in a split terminal', force = true })
 
   vim.api.nvim_create_user_command('GaugeSpecs', function()
     M.specs()
-  end, { desc = 'List all Gauge spec files in the quickfix list' })
+  end, { desc = 'List all Gauge spec files in the quickfix list', force = true })
 end
 
 return M

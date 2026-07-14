@@ -31,8 +31,9 @@ All options are optional — `setup()` works with no arguments:
 
 ```lua
 require('gauge').setup({
-  -- Override the LSP server command (default: gauge daemon --lsp --dir <root>)
-  cmd = { 'gauge', 'daemon', '--lsp', '--dir', vim.fn.getcwd() },
+  -- Only override if you need a non-standard project path.
+  -- The default automatically detects the per-project root at attach time.
+  -- cmd = { 'gauge', 'daemon', '--lsp', '--dir', '/absolute/path/to/project' },
 
   -- Called when the LSP client attaches to a buffer
   on_attach = function(client, bufnr)

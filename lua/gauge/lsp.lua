@@ -26,9 +26,10 @@ function M.attach(bufnr, opts)
 
   local root_dir = find_root(bufnr)
   if not root_dir then
-    local cwd = vim.fn.getcwd()
-    if not warned[cwd] then
-      warned[cwd] = true
+    local fname = vim.api.nvim_buf_get_name(bufnr)
+    local dir = vim.fs.dirname(fname)
+    if not warned[dir] then
+      warned[dir] = true
       vim.notify(
         '[gauge.nvim] No manifest.json found — not a Gauge project. LSP will not start.',
         vim.log.levels.WARN
