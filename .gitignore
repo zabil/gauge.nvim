@@ -1,0 +1,11 @@
+# SDD / Superpowers scratch files
+.superpowers/
+
+# macOS
+.DS_Store
+
+# Neovim swap / backup / undo files
+*.swp
+*.swo
+*~
+.*.swp
