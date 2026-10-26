@@ -104,7 +104,7 @@ function M.specs()
   end
 
   -- gauge/specs takes no params (nil omits the "params" field in JSON-RPC)
-  client.request('gauge/specs', nil, function(err, result)
+  client:request('gauge/specs', nil, function(err, result)
     if err then
       vim.notify(
         '[gauge.nvim] Failed to fetch spec list from LSP server: ' .. tostring(err.message),
