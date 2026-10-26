@@ -4,19 +4,34 @@ local M = {}
 -- Track which cwds we've already warned about so we only notify once.
 local warned = {}
 
-local function find_root(bufnr)
+-- A Gauge manifest.json always has a "Language" key. Other tools also use
+-- manifest.json (e.g. browser extensions), so in monorepos we must skip those.
+local function is_gauge_manifest(path)
+  local ok, lines = pcall(vim.fn.readfile, path)
+  if not ok then return false end
+  local ok2, data = pcall(vim.json.decode, table.concat(lines, '\n'))
+  return ok2 and type(data) == 'table' and data.Language ~= nil
+end
+
+-- Find the nearest enclosing Gauge project root for a buffer, walking upward
+-- through every parent directory (nested/multi-project monorepos).
+function M.find_root(bufnr)
   local fname = vim.api.nvim_buf_get_name(bufnr)
   if fname == '' then return nil end
-  local matches = vim.fs.find('manifest.json', {
-    path    = vim.fs.dirname(fname),
-    upward  = true,
-    limit   = 1,
-  })
-  if matches[1] then
-    return vim.fs.dirname(matches[1])
+  local dir = vim.fs.dirname(fname)
+  while dir do
+    local manifest = dir .. '/manifest.json'
+    if vim.uv.fs_stat(manifest) and is_gauge_manifest(manifest) then
+      return dir
+    end
+    local parent = vim.fs.dirname(dir)
+    if not parent or parent == dir then break end
+    dir = parent
   end
   return nil
 end
+
+local find_root = M.find_root
 
 function M.attach(bufnr, opts)
   if vim.fn.executable('gauge') == 0 then

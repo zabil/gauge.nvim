@@ -25,7 +25,7 @@ local function nearest_scenario_line(bufnr)
   return nil
 end
 
-local function open_run_split(shell_cmd)
+local function open_run_split(shell_cmd, cwd)
   -- Delete previous terminal buffer (also kills the attached job).
   if run_buf and vim.api.nvim_buf_is_valid(run_buf) then
     vim.api.nvim_buf_delete(run_buf, { force = true })
@@ -38,6 +38,7 @@ local function open_run_split(shell_cmd)
   run_win = vim.api.nvim_get_current_win()
 
   vim.fn.termopen(shell_cmd, {
+    cwd = cwd,
     on_exit = function(_, code)
       vim.notify(
         string.format('[gauge.nvim] Run finished (exit %d)', code),
@@ -71,12 +72,23 @@ function M.run()
     return
   end
 
+  -- Run from the nearest Gauge project root so nested projects in a monorepo
+  -- use their own manifest, env and language runner.
+  local root = require('gauge.lsp').find_root(bufnr)
+  if not root then
+    vim.notify(
+      '[gauge.nvim] No Gauge project (manifest.json with "Language") found above this file.',
+      vim.log.levels.WARN
+    )
+    return
+  end
+
   local scenario_line = nearest_scenario_line(bufnr)
   local cmd = 'gauge run ' .. vim.fn.shellescape(filepath)
   if scenario_line then
     cmd = cmd .. ':' .. tostring(scenario_line)
   end
-  open_run_split(cmd)
+  open_run_split(cmd, root)
 end
 
 function M.specs()
